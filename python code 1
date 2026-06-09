@@ -1,0 +1,44 @@
+#программа, которая создает матрицу размером n×m, заполнив ее "спиралью" 
+N = input().split()
+n, m = int(N[0]), int(N[1])
+
+# Создаём матрицу
+mat = [[0] * m for _ in range(n)]
+
+# Границы спирали
+top, bottom, left, right = 0, n - 1, 0, m - 1
+num = 1
+
+while top <= bottom and left <= right:
+    # Верхняя строка
+    for j in range(left, right + 1):
+        mat[top][j] = num
+        num += 1
+    top += 1
+
+    # Правый столбец
+    for i in range(top, bottom + 1):
+        mat[i][right] = num
+        num += 1
+    right -= 1
+
+    if top <= bottom:
+        # Нижняя строка
+        for j in range(right, left - 1, -1):
+            mat[bottom][j] = num
+            num += 1
+        bottom -= 1
+
+    if left <= right:
+        # Левый столбец
+        for i in range(bottom, top - 1, -1):
+            mat[i][left] = num
+            num += 1
+        left += 1
+
+# Вывод
+for i in range(n):
+    for j in range(m):
+        print(str(mat[i][j]).ljust(3), end=' ')
+    print()
+            
