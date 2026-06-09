@@ -1,0 +1,78 @@
+-- Для каждого дня в таблицах orders и courier_actions рассчитайте следующие показатели:
+
+-- Выручку, полученную в этот день.
+-- Затраты, образовавшиеся в этот день.
+-- Сумму НДС с продажи товаров в этот день.
+-- Валовую прибыль в этот день.
+-- Суммарную выручку на текущий день.
+-- Суммарные затраты на текущий день.
+-- Суммарный НДС на текущий день.
+-- Суммарную валовую прибыль на текущий день.
+-- Долю валовой прибыли в выручке за этот день.
+-- Долю суммарной валовой прибыли в суммарной выручке на текущий день.
+with t1 as (
+select date, sum(price) as revenue, count(distinct order_id) as all_ord
+from products join (
+select creation_time::date as date, unnest(product_ids) as product_id, order_id
+from orders
+where order_id not in (select order_id from user_actions where action = 'cancel_order'))l using (product_id)
+group by 1),
+    t11 as (
+select date, sum(case
+when name in ('сахар', 'сухарики', 'сушки', 'семечки', 
+'масло льняное', 'виноград', 'масло оливковое', 
+'арбуз', 'батон', 'йогурт', 'сливки', 'гречка', 
+'овсянка', 'макароны', 'баранина', 'апельсины', 
+'бублики', 'хлеб', 'горох', 'сметана', 'рыба копченая', 
+'мука', 'шпроты', 'сосиски', 'свинина', 'рис', 
+'масло кунжутное', 'сгущенка', 'ананас', 'говядина', 
+'соль', 'рыба вяленая', 'масло подсолнечное', 'яблоки', 
+'груши', 'лепешка', 'молоко', 'курица', 'лаваш', 'вафли', 'мандарины') then round(0.1*price/1.1,2)
+else round(0.2*price/1.2,2)
+end) as tax
+from products join (
+select creation_time::date as date, unnest(product_ids) as product_id
+from orders
+where order_id not in (select order_id from user_actions where action = 'cancel_order'))l using (product_id)
+group by 1),
+    t2 as (
+select time::date as date, courier_id, case
+when count(order_id) > 4 then 1
+else 0
+end as if_bonus
+from courier_actions 
+where action = 'deliver_order'
+group by 1, 2
+),
+    t3 as (
+select date, case
+when date_trunc('month', date) = '2022-08-01' then 120000
+else 150000
+end as sklad,
+case
+when date_trunc('month', date) = '2022-08-01' then 140
+else 115
+end as sborka,
+case
+when date_trunc('month', date) = '2022-08-01' then 400*sum(if_bonus)
+else 500*sum(if_bonus)
+end as bonus
+from t1 join t2 using(date)
+group by 1),
+t5 as (select
+time::date as date, count(distinct order_id) as del_ord
+from courier_actions 
+where action = 'deliver_order'
+group by 1),
+     t4 as (
+select date, revenue, sklad + all_ord*sborka + del_ord*150 + bonus as costs, tax, 
+round(revenue - tax - (sklad + all_ord*sborka + del_ord*150 + bonus),2) as gross_profit,
+round((revenue - tax - (sklad + all_ord*sborka + del_ord*150 + bonus))/revenue::decimal*100,2) as gross_profit_ratio
+from t1 join t3 using(date) join t11 using(date) join t5 using(date)
+)
+select date, revenue, costs::decimal, tax, gross_profit, gross_profit_ratio, sum(revenue) over(order by date) as total_revenue,
+sum(costs) over(order by date) as total_costs,
+sum(tax) over(order by date) as total_tax,
+sum(gross_profit) over(order by date) as total_gross_profit,
+round((sum(gross_profit) over(order by date))/(sum(revenue) over(order by date))::decimal*100,2) as total_gross_profit_ratio
+from t4
