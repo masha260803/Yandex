@@ -1,0 +1,20 @@
+# функция , которая сгруппирует суммы по типам услуг.
+# Удаляет дубликаты по trans_id.
+# Суммирует выручку по каждой категории service.
+# Итоговый словарь должен содержать только те услуги, общая сумма по которым превышает 5000.
+def summarize_services(orders) -> dict:
+    new_orders, l = [], []
+    for i in orders: # удаляем дубликаты
+        if i['trans_id'] not in l:
+            l.append(i['trans_id'])
+            new_orders.append(i)    
+    service = set([i['service'] for i in new_orders]) # создаем множество сервисов 
+    result = {}
+    for i in service:
+        for j in new_orders:
+            if j['service'] == i:
+                result[i] = result.setdefault(i, 0) + float(j['amount']) # суммируем по сервисам
+    for k, v in sorted(result.items()): # фильтруем по ценам
+        if v < 5000:
+            del result[k]
+    return result
