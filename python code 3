@@ -1,0 +1,17 @@
+# программа для определения категории-лидера
+n = int(input())
+categories = []
+sales = []
+total_sales = 0
+for _ in range(n):
+    line = input().split()
+    category = line[0]
+    sale = int(line[1])
+    categories.append(category)
+    sales.append(sale)
+    total_sales += sale
+    
+lid = max(categories, key = lambda x: sales[categories.index(x)])
+dol = round(sales[categories.index(lid)]/total_sales *100,2)
+
+print(f'Лидер: {lid}, доля {dol}%')
