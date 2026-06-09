@@ -1,0 +1,20 @@
+# Сгенерировать две нормальные выборки (A: mean=100, B: mean=105, std=10, n=50) и проверить, есть ли статистически значимое различие. A/B тест
+import numpy as np
+from scipy import stats
+# генерируем две выборки нормальные
+A = np.random.normal(100, 10, 50)
+B = np.random.normal(105, 10, 50)
+# нулевая гипотеза: E1=E2 равны
+# используем т тест для проверки
+# мо и дисперсии
+m1 = np.mean(A)
+m2 = np.mean(B)
+var1 = np.var(A, ddof = 1)
+var2 = np.var(B, ddof = 1)
+# т тест
+t = (m1- m2)/np.sqrt(var1/50+var2/50)
+t_crit = stats.t.ppf(1 - 0.05/2, 50+50-2)
+if abs(t) > t_crit:
+print('различие статистически значимо')
+else:
+print('нет оснований считать что различие значимо')
